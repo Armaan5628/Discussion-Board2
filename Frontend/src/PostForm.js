@@ -1,27 +1,26 @@
 import React, { useState } from "react";
 
-function PostForm({ onAddPost }) {
+export default function PostForm({ onAddPost }) {
   const [text, setText] = useState("");
 
-  const handleSubmit = (e) => {
+  const submit = (e) => {
     e.preventDefault();
-    if (text.trim()) {
-      onAddPost(text);
-      setText("");
-    }
+    if (!text.trim()) return;
+    onAddPost(text.trim());
+    setText("");
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={submit} className="post-form">
       <input
-        type="text"
-        placeholder="Write a post"
+        placeholder="Write a post..."
         value={text}
         onChange={(e) => setText(e.target.value)}
+        className="post-input"
       />
-      <button type="submit">Add Post</button>
+      <button type="submit" className="post-add-btn">
+        Add Post
+      </button>
     </form>
   );
 }
-
-export default PostForm;

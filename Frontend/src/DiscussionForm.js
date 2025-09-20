@@ -1,27 +1,26 @@
 import React, { useState } from "react";
 
-function DiscussionForm({ onAddDiscussion }) {
+export default function DiscussionForm({ onAddDiscussion }) {
   const [title, setTitle] = useState("");
 
-  const handleSubmit = (e) => {
+  const submit = (e) => {
     e.preventDefault();
-    if (title.trim()) {
-      onAddDiscussion(title);
-      setTitle("");
-    }
+    if (!title.trim()) return;
+    onAddDiscussion(title.trim());
+    setTitle("");
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ margin: "20px 0" }}>
+    <form onSubmit={submit} className="discussion-form">
       <input
-        type="text"
-        placeholder="New discussion title"
+        placeholder="Start a new discussion..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
+        className="discussion-input"
       />
-      <button type="submit">Add Discussion</button>
+      <button type="submit" className="discussion-add-btn">
+        Add
+      </button>
     </form>
   );
 }
-
-export default DiscussionForm;

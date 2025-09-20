@@ -1,33 +1,22 @@
-import React, { useState, useEffect } from "react";
+// Frontend/src/App.js
+import React, { useState } from "react";
 import Auth from "./Auth";
 import DiscussionBoard from "./DiscussionBoard";
+import "./App.css";
 
 function App() {
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
-
-  const handleLogin = (userData) => {
-    setUser(userData);
-    localStorage.setItem("currentUser", JSON.stringify(userData));
-  };
-
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem("currentUser");
   };
 
   return (
-    <div>
-      {user ? (
-        <DiscussionBoard user={user} onLogout={handleLogout} />
+    <div className="App">
+      {!user ? (
+        <Auth setUser={setUser} />
       ) : (
-        <Auth onLogin={handleLogin} />
+        <DiscussionBoard user={user} onLogout={handleLogout} />
       )}
     </div>
   );

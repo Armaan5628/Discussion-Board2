@@ -1,133 +1,92 @@
+// Frontend/src/Auth.js
 import React, { useState } from "react";
 import "./Auth.css";
 
-function Auth({ onLogin }) {
-  const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [mode, setMode] = useState("login");
+function Auth({ setUser }) {
+  const [isSignup, setIsSignup] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    username: "",
+    phone: "",
+    password: "",
+  });
 
-  // ✅ password validation
-  const validatePassword = (pwd) => {
-    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$/;
-    return regex.test(pwd);
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleAuth = async () => {
-    if (mode === "signup") {
-      if (!email || !username || !phone || !password) {
-        setError("⚠️ All fields are required for sign up");
-        return;
-      }
-      if (!validatePassword(password)) {
-        setError("⚠️ Password must be 8+ chars, include uppercase, lowercase, and special char");
-        return;
-      }
-    } else {
-      if (!email || !password) {
-        setError("⚠️ Email and password are required");
-        return;
-      }
-    }
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const endpoint = isSignup ? "/api/auth/signup" : "/api/auth/login";
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/${mode}`, {
+      const res = await fetch(`http://localhost:5000${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          mode === "login"
-            ? { email, password } // ✅ login by email
-            : { email, username, phone, password }
-        ),
+        body: JSON.stringify(formData),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || "❌ Something went wrong");
-        return;
+      const data = await res.json();
+      if (res.ok) {
+        setUser(data.user); // user object {username, email, phone}
+      } else {
+        alert(data.message);
       }
-
-      onLogin(data.user.username); // still show username after login
-
-      // reset
-      setEmail("");
-      setUsername("");
-      setPhone("");
-      setPassword("");
-      setError("");
     } catch (err) {
-      setError("❌ Server error, please try again later.");
+      console.error(err);
+      alert("Something went wrong");
     }
   };
 
   return (
     <div className="auth-container">
-      <h2>{mode === "login" ? "Login" : "Sign Up"}</h2>
-
-      {error && <p className="error-msg">{error}</p>}
-
-      {mode === "signup" && (
-        <>
-          <input
-            type="text"
-            placeholder="Enter username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Enter phone number"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-        </>
-      )}
-
-      {/* ✅ Always ask for email */}
-      <input
-        type="email"
-        placeholder="Enter email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-
-      <input
-        type="password"
-        placeholder="Enter password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-
-      <div className="auth-buttons">
-        <button onClick={handleAuth}>
-          {mode === "login" ? "Login" : "Sign Up"}
-        </button>
-
-        {/* ✅ Cancel → google.ca */}
-        <button
-          type="button"
-          onClick={() => (window.location.href = "https://www.google.ca")}
-        >
-          Cancel
-        </button>
-      </div>
-
-      <div className="toggle">
-        {mode === "login" ? (
-          <p>
-            Don’t have an account?{" "}
-            <button onClick={() => setMode("signup")}>Sign Up</button>
-          </p>
-        ) : (
-          <p>
-            Already have an account?{" "}
-            <button onClick={() => setMode("login")}>Login</button>
-          </p>
+      <h2>{isSignup ? "Sign Up" : "Login"}</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
+        {isSignup && (
+          <>
+            <input
+              type="text"
+              name="username"
+              placeholder="Username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+            />
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Phone (North America)"
+              value={formData.phone}
+              onChange={handleChange}
+              required
+            />
+          </>
         )}
-      </div>
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          required
+        />
+        <button type="submit">{isSignup ? "Sign Up" : "Login"}</button>
+      </form>
+      <button onClick={() => setIsSignup(!isSignup)}>
+        {isSignup ? "Already have an account? Login" : "Need an account? Sign Up"}
+      </button>
+      <button
+        className="cancel-btn"
+        onClick={() => (window.location.href = "https://www.google.ca")}
+      >
+        Cancel
+      </button>
     </div>
   );
 }

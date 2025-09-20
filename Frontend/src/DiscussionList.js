@@ -1,60 +1,44 @@
+// Frontend/src/DiscussionList.js
 import React from "react";
 
-function DiscussionList({ discussions, onSelectDiscussion, onLike, onDislike }) {
+function DiscussionList({ discussions, currentUser, onSelect, onDelete, onVote }) {
   return (
-    <div>
-      <h2>Discussions</h2>
-      <ul>
-        {discussions.map((d) => (
-          <li
-            key={d.id}
-            style={{
-              marginBottom: "15px",
-              padding: "10px",
-              background: "#f9f9f9",
-              border: "1px solid #ddd",
-              borderRadius: "8px",
-            }}
+    <ul className="discussion-list">
+      {discussions.map((d) => (
+        <li key={d._id} className="discussion-item">
+          <div
+            className="discussion-title-container"
+            onClick={() => onSelect(d)}
           >
-            <span
-              style={{ cursor: "pointer", color: "#007bff", fontWeight: "bold" }}
-              onClick={() => onSelectDiscussion(d)}
+            <span className="discussion-title">{d.title}</span>
+            <span className="post-badge">{d.posts?.length || 0} posts</span>
+          </div>
+
+          <div className="actions">
+            <button
+              className="vote-btn"
+              onClick={() => onVote(d._id, "like")}
             >
-              {d.title}
-            </span>
-            <div style={{ marginTop: "8px" }}>
+              👍 {d.likes?.length || 0}
+            </button>
+            <button
+              className="vote-btn"
+              onClick={() => onVote(d._id, "dislike")}
+            >
+              👎 {d.dislikes?.length || 0}
+            </button>
+            {d.user === currentUser && (
               <button
-                onClick={() => onLike(d.id)}
-                style={{
-                  marginRight: "10px",
-                  background: "#28a745",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "5px",
-                  padding: "5px 10px",
-                  cursor: "pointer",
-                }}
+                className="delete-btn"
+                onClick={() => onDelete(d._id)}
               >
-                👍 {d.likes}
+                🗑 Delete
               </button>
-              <button
-                onClick={() => onDislike(d.id)}
-                style={{
-                  background: "#dc3545",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "5px",
-                  padding: "5px 10px",
-                  cursor: "pointer",
-                }}
-              >
-                👎 {d.dislikes}
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+            )}
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 

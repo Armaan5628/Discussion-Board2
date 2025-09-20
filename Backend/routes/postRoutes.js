@@ -1,45 +1,99 @@
 const express = require("express");
 const router = express.Router();
 const Post = require("../models/Post");
+const Discussion = require("../models/Discussion");
 
-// ✅ Get posts for a discussion
-router.get("/discussions/:id/posts", async (req, res) => {
+// Create post inside a discussion
+router.post("/:discussionId", async (req, res) => {
   try {
-    const posts = await Post.find({ discussionId: req.params.id }).sort({ createdAt: -1 });
-    res.json(posts);
-  } catch (err) {
-    res.status(500).json({ message: "❌ Failed to fetch posts" });
-  }
-});
+    const { content, user } = req.body; // user = username string
+    const discussionId = req.params.discussionId;
 
-// ✅ Add post to a discussion
-router.post("/discussions/:id/posts", async (req, res) => {
-  try {
-    const { text, author } = req.body;
-    if (!text || !author) {
-      return res.status(400).json({ message: "Text and author required" });
-    }
+    const discussion = await Discussion.findById(discussionId);
+    if (!discussion) return res.status(404).json({ message: "Discussion not found" });
 
-    const newPost = new Post({
-      text,
-      author,
-      discussionId: req.params.id,
+    const post = new Post({
+      content,
+      user,
+      discussion: discussionId,
+      likes: [],
+      dislikes: [],
     });
 
-    await newPost.save();
-    res.status(201).json(newPost);
+    await post.save();
+    discussion.posts.push(post._id);
+    await discussion.save();
+
+    res.json(post);
   } catch (err) {
-    res.status(500).json({ message: "❌ Failed to create post" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Delete a post
-router.delete("/posts/:postId", async (req, res) => {
+// Get all posts for a discussion
+router.get("/:discussionId", async (req, res) => {
   try {
-    await Post.findByIdAndDelete(req.params.postId);
-    res.json({ message: "✅ Post deleted" });
+    const posts = await Post.find({ discussion: req.params.discussionId }).sort({ createdAt: -1 });
+    res.json(posts);
   } catch (err) {
-    res.status(500).json({ message: "❌ Failed to delete post" });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete post (optional auth check by username)
+router.delete("/:id", async (req, res) => {
+  try {
+    const { username } = req.body;
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    if (username && post.user !== username) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    await post.deleteOne();
+    res.json({ message: "Post deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Toggle like/dislike on a post
+router.post("/:id/vote", async (req, res) => {
+  try {
+    const actor = (req.body.userId || req.body.user || "").toString().trim();
+    const { type } = req.body; // "like" or "dislike"
+    if (!actor) return res.status(400).json({ message: "Missing userId/user" });
+    if (!["like", "dislike"].includes(type)) {
+      return res.status(400).json({ message: "Invalid vote type" });
+    }
+
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    const hasLiked = post.likes.includes(actor);
+    const hasDisliked = post.dislikes.includes(actor);
+
+    if (type === "like") {
+      if (hasLiked) {
+        post.likes = post.likes.filter(u => u !== actor);
+      } else {
+        post.dislikes = post.dislikes.filter(u => u !== actor);
+        post.likes.push(actor);
+      }
+    } else {
+      if (hasDisliked) {
+        post.dislikes = post.dislikes.filter(u => u !== actor);
+      } else {
+        post.likes = post.likes.filter(u => u !== actor);
+        post.dislikes.push(actor);
+      }
+    }
+
+    await post.save();
+    res.json(post);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
